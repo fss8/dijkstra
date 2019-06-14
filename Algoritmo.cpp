@@ -29,7 +29,7 @@ public:
         heap = (RetornoHeap*)malloc((V)*sizeof(RetornoHeap));
         for(int i = 0; i < V; i++){
             Graf[i] = create_raiz(i, 0);
-            cout << Graf[i]->no << " - "<< Graf[i]->peso << "\n";
+            //cout << Graf[i]->no << " - "<< Graf[i]->peso << "\n";
         }
         v = V;
     }
