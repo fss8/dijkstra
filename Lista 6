@@ -1,0 +1,320 @@
+#include <iostream>
+#define INFINITO 99999999
+using namespace std;
+
+int D[1000000],F[1000000];
+
+struct RetornoHeap{
+    int dist;
+    int vertice;
+};
+
+struct CaminhoDistante{
+    int *Distancia;
+    int *Caminho;
+};
+
+struct Graph{
+    int no;
+    int peso;
+    int distan;
+    Graph * Prox;
+};
+
+struct Pedidos{
+    int id;
+    short int qtd;
+};
+
+int tamanho; RetornoHeap *heap;
+
+class GrafoObj{
+public:
+    Graph ** Graf; int v; CaminhoDistante *Vertice; short int **Armaz;
+    short int **Lista; short int *QtdeLiga;
+    GrafoObj(int V, int B){
+        Graf = (Graph**)malloc((V)*sizeof(Graph*));
+        Vertice = (CaminhoDistante*)malloc((V)*sizeof(CaminhoDistante));
+        Armaz = (short **)malloc((V+1)*sizeof(short*));
+        Lista = (short **)malloc((V)*sizeof(short*));
+        QtdeLiga = (short*)malloc((V)*sizeof(short));
+        heap = (RetornoHeap*)malloc((V)*sizeof(RetornoHeap));
+        for(int i = 0; i < V; i++){
+            Graf[i] = create_raiz(i, 0, 0);
+            QtdeLiga[i] = 0;
+            Armaz[i] = (short*)malloc((B+1)*sizeof(short));
+            //cout << Graf[i]->no << " - "<< Graf[i]->peso << "\n";
+        }
+        v = V;
+    }
+    int CalculaCaminho(int s, int d){
+        Dijkstra(s-1);
+        //for(int i = 0; i < v; i++) {
+        //cout << Vertice[s-1].Distancia[i] << "  "; //Meu debuguer
+        //}
+        //cout << "\n" << " distancia" << Vertice[s-1].Distancia[d-1];
+        return Vertice[s-1].Distancia[d-1];
+    }
+    void Dijkstra(int s){
+        //int e;
+        Graph *e; int tam2 = 0; Lista[s] = (short*)malloc((v+1)*sizeof(short));
+        for(int i = 0; i < v; i++){
+            D[i] = INFINITO;
+            F[i] = -1;
+            heap[i].vertice = i;
+            heap[i].dist = INFINITO;
+        }
+        D[s] = 0;
+        F[s] = s;
+        int tam = 0;
+        int d,u;
+        RetornoHeap a;
+        RetornoHeap w;
+        //Inserir na heap
+        tamanho = v;
+        //RetornoHeap l; l.dist = 0; l.vertice = s;
+        min_heap_insert(0,s);
+        while(tamanho > 0){
+            a = min_heap_extract();
+            d = a.dist;  u = a.vertice;
+            //cout << d << " ~ "<< u << "\n";
+            if(a.dist != INFINITO){
+                //tam2++;
+                Lista[s][tam2] = u;
+                tam2++;
+            }
+            e = Graf[u];
+            while(e != nullptr){
+                //cout << e->no << " <NO";
+                if(D[e->no] > d+e->peso){
+                    //cout << " -Entrou ";
+                    D[e->no] = d+e->peso;
+                    //cout << D[e->no] << "-dist ";
+                    F[e->no] = u;
+                    w.dist = D[e->no];
+                    w.vertice = e->no;
+                    min_heap_update(w);
+                }
+                e = e->Prox;
+            }
+        }
+        QtdeLiga[s] = tam2;
+        Vertice[s].Caminho = (int*)malloc((v)*sizeof(int));
+        Vertice[s].Distancia = (int*)malloc((v)*sizeof(int));
+        for(int i = 0; i<v; i++){
+            //cout << D[i] << "<<d "<< F[i] << "<<Precur ";
+            Vertice[s].Distancia[i] = D[i];
+            Vertice[s].Caminho[i] = F[i];
+        }
+        //cout << "\n";
+    }
+    void min_heap_insert(int sdr, int id){
+        int pos = id;
+        heap[pos].dist = sdr;
+        //heap[pos].vertice = r.vertice;
+        BubbleUp0(pos);
+    }
+    RetornoHeap min_heap_extract(){
+        RetornoHeap t;
+        t.vertice = heap[0].vertice;
+        t.dist = heap[0].dist;
+        TrocaSoldados(0, tamanho-1);
+        tamanho--;
+        heapfy(0);
+        return t;
+    }
+    void min_heap_update(RetornoHeap t){
+        int i;
+        for(i = 0; i < tamanho; i++){
+            if(heap[i].vertice == t.vertice){
+                //cout << i <<" I ";
+                break;  }
+        }
+        //cout << i << " i ";
+        //cout << "Dist " << heap[i].dist << "DAt " << t.dist << " ";
+        heap[i].dist = t.dist;
+        BubbleUp0(i);
+        heapfy(i);
+    }
+    void heapfy(int i){
+        int l = (i)+1, m = i;
+        if ((l < tamanho && heap[l].dist < heap[m].dist) || (l < tamanho && heap[l].dist == heap[m].dist && heap[l].vertice < heap[m].vertice)) {
+            m = l;
+        }
+        /*if ((r < tamanho && heap[r].dist < heap[m].dist)) {
+            m = r;
+        }*/
+        if(m != i) {
+            TrocaSoldados(i, m);
+            heapfy(m);
+        }
+    }
+    void BubbleUp0(int i){
+        int p = (i-1);
+        while((i > 0 && heap[i].dist <  heap[p].dist)  || (i > 0 && (heap[i].dist == heap[p].dist) && (heap[i].vertice < heap[p].vertice))){
+            TrocaSoldados(i, p);
+            i = p;
+            p = (i-1);
+        }
+    }
+    void TrocaSoldados(int i, int p) {
+        int temp1 = heap[i].dist;
+        int temp2 = heap[i].vertice;
+        heap[i].vertice = heap[p].vertice;
+        heap[i].dist = heap[p].dist;
+        heap[p].vertice = temp2;
+        heap[p].dist = temp1;
+    }
+    void build_heap(){
+        for(int i = (tamanho/2)-1; i >= 0; i--){
+            heapfy(i);
+        }
+    }
+    void EncontraProx(int x, int y, int ab, int dt){
+        if(Graf[x]->Prox == nullptr){
+            Graf[x]->Prox = create_raiz(y,ab, dt);
+        }else{
+            Graph *z = Graf[x]->Prox;
+            while(z->Prox != nullptr){
+                z = z->Prox;
+            }
+            z->Prox = create_raiz(y, ab, dt);
+        }
+    }
+    Graph * create_raiz(int val, int ab, int dt){
+        Graph * aux = (Graph *) malloc(sizeof(Graph));
+        aux->no = val;
+        aux->peso = ab;
+        aux->distan = dt;
+        aux->Prox = nullptr;
+        return aux;
+    }
+    void PrintarCaminho(int R, int S){
+        int p = Vertice[R].Distancia[S];
+        int u = S;
+        if(Vertice[R].Caminho[u] != p){
+            cout << S << " ";
+        }
+        while(Vertice[R].Caminho[u] != R){
+            cout << Vertice[R].Caminho[u] << " ";
+            u = Vertice[R].Caminho[u];
+        }
+        if(Vertice[R].Caminho[u] != S){
+            cout << Vertice[R].Caminho[u] << " " ;
+        }
+        cout << p << "\n";
+        //}
+    }
+    void VerificaEstoque(int T, Pedidos A[], int M){
+        int Encontrou = 0;
+        if(QtdeLiga[T] == 0) {
+            Dijkstra(T);
+        }
+        //cout << QtdeLiga[T] << "- QTDELIGA " << "\n";
+        //for(int i = 0; i < M; i++){
+        //    cout << A[i].id << " - "<< A[i].qtd << "\n";
+        //}
+        for(int i = 0; i < QtdeLiga[T]; i++){
+            Encontrou = 0;
+            for(int j = 0; j < M; j++){
+                if(Armaz[Lista[T][i]][A[j].id] < A[j].qtd){
+                    Encontrou = 2;
+                    break;
+                }
+                if(j == M-1){
+                    Encontrou = 1;
+                    for(int k = 0; k < M; k++){
+                        Armaz[Lista[T][i]][A[k].id] -= A[k].qtd;
+                    }
+                    PrintarCaminho(T,Lista[T][i]);
+                }
+            }
+            if(Encontrou == 1){
+                break;
+            }
+        }
+        if(Encontrou == 0 || Encontrou == 2){
+            cout << "OOS"<< "\n";
+        }
+    }
+};
+
+int main() {
+    int value, ds, coefic; short int custo; int T,M; int id,qtd; int local,repor;
+    int V,E,B,X,Y; string abc;
+    cin >> V >> E >> B;
+    GrafoObj *GRF; GRF = new GrafoObj(V,B);
+    for(int i = 0; i < E; i++){
+        cin >> X >> Y >> ds >> coefic;
+        custo = ( ds * ( 100 + coefic ) ) / 100;
+        GRF->EncontraProx(X, Y, custo, ds);
+        GRF->EncontraProx(Y, X, custo, ds);
+        //GRF->Grafo[X][Y] = custo; GRF->Grafo[Y][X] = custo;
+        //cout << i;
+    }
+    for(int r = 0; r < V; r++){
+        //int k = 0;
+        for(int j = 0; j < B; j++){
+            //cout << "Olha";
+            cin >> value;
+            GRF->Armaz[r][j] = value;
+            //k = j;
+            //cout << " " << j;
+            //if(j == B-1){
+            //    cout << " K - " << r << "\n";
+            //}
+        }
+        //cout << "\n";
+        //cout << k << " ";
+        //cout << i << "  -  ";
+    }
+    //cout << "Aqui";
+    cin >> abc;
+    while(abc[0] != 'E'){
+        if(abc[0] == 'O'){
+            cin >> T >> M;
+            Pedidos *A;
+            A = (Pedidos *) malloc((M) * sizeof(Pedidos));
+            for (int i = 0; i < M; i++) {
+                cin >> id >> qtd;
+                A[i].id = id;
+                A[i].qtd = qtd;
+            }
+            //Calcular menor caminho
+            //if(){
+            GRF->VerificaEstoque(T, A, M);
+            delete(A);
+        }
+        else if(abc[0] == 'U'){
+            cin >> X >> Y >> coefic;
+            Graph *z;
+            z = GRF->Graf[X];
+            while(z->Prox != nullptr){
+                if(z->no == Y){
+                    z->peso = ( z->distan * ( 100 + coefic ) ) / 100;
+                    break;
+                }
+                z = z->Prox;
+            }
+            Graph *n;
+            n = GRF->Graf[Y];
+            while(n->Prox != nullptr){
+                if(n->no == X){
+                    n->peso = ( n->distan * ( 100 + coefic ) ) / 100;
+                    break;
+                }
+                n = n->Prox;
+            }
+            GRF->Dijkstra(X);
+            GRF->Dijkstra(Y);
+            //free(z);
+            //free(n);
+        }
+        else if(abc[0] == 'S'){
+            cin >> local >> X >> repor;
+            GRF->Armaz[local][X] += repor;
+        }
+        cin >> abc;
+    }
+    return 0;
+}
